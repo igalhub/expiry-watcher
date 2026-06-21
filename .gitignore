@@ -1,0 +1,19 @@
+# IDE
+.idea/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Runtime state
+results.db
+
+# Secrets / local config
+.env
+config/vault.yaml
+config/local_*.yaml

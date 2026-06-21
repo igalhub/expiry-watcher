@@ -1,0 +1,5 @@
+fastapi==0.138.0
+uvicorn==0.49.0
+cryptography==49.0.0
+hvac==2.4.0
+PyYAML==6.0.3

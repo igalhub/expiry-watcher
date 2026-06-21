@@ -1,0 +1,28 @@
+# Expiry Watcher — target configuration template
+# Copy this file to config/targets.yaml and fill in real values.
+# config/targets.yaml is gitignored and must never be committed.
+
+tls_endpoints:
+  - host: "example.com"
+    port: 443
+  - host: "another-example.com"
+    port: 443
+
+local_certs:
+  - path: "/path/to/your/cert.pem"
+  - path: "/path/to/another/cert.crt"
+
+vault:
+  url: "http://localhost:8200"
+  # AppRole credentials for the expiry-watcher-test-short-ttl role.
+  # Generate with: bash scripts/vault_setup_test_role.sh
+  role_id: "REPLACE_ME"
+  secret_id: "REPLACE_ME"
+  # Optional: a long-lived token to check directly (in addition to AppRole)
+  token: "REPLACE_ME"
+
+settings:
+  # How often the checker runs, in hours. Must match the systemd timer interval.
+  check_interval_hours: 6
+  # Path to the SQLite results database.
+  db_path: "results.db"
