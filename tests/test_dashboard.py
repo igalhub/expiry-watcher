@@ -76,21 +76,21 @@ def test_index_200_html():
 def test_index_contains_severity_classes():
     with _patch_db():
         r = client.get("/")
-    assert "severity-healthy" in r.text
-    assert "severity-expired" in r.text
-    assert "severity-critical" in r.text
+    assert "ti-circle-check" in r.text    # healthy icon
+    assert "ti-alert-circle" in r.text    # expired icon
+    assert "ti-alert-triangle" in r.text  # critical/warning icon
 
 
 def test_index_shows_stale_banner_when_stale():
     with _patch_db(last_checked=_STALE):
         r = client.get("/")
-    assert '<div class="stale-banner">' in r.text
+    assert "Data is stale" in r.text
 
 
 def test_index_no_stale_banner_when_fresh():
     with _patch_db(last_checked=_RECENT):
         r = client.get("/")
-    assert '<div class="stale-banner">' not in r.text
+    assert "Data is stale" not in r.text
 
 
 # --- read-only enforcement ---
