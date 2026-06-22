@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS results (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT    NOT NULL,
     type          TEXT    NOT NULL,
-    days_remaining REAL,
+    days_remaining INTEGER,
     severity      TEXT,
     checked_at    TEXT    NOT NULL,
     error         TEXT,
@@ -43,7 +43,7 @@ def write_results(path: str, results: list[dict]) -> None:
                 {
                     "name":           r["name"],
                     "type":           r["type"],
-                    "days_remaining": r.get("days_remaining"),
+                    "days_remaining": int(r["days_remaining"]) if r.get("days_remaining") is not None else None,
                     "severity":       r.get("severity"),
                     "checked_at":     r.get("checked_at") or now,
                     "error":          r.get("error"),
