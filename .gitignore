@@ -15,6 +15,7 @@ results.db
 
 # Secrets / local config
 .env
+config/targets.yaml
 config/vault.yaml
 config/local_*.yaml
 

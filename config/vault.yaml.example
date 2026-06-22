@@ -1,0 +1,10 @@
+# Expiry Watcher — Vault credentials template
+# Copy this file to config/vault.yaml and fill in real values.
+# config/vault.yaml is gitignored and must never be committed.
+# Generate AppRole credentials with: bash scripts/vault_setup_test_role.sh
+
+vault:
+  role_id: "REPLACE_ME"
+  secret_id: "REPLACE_ME"
+  # Optional: a long-lived token to check directly (in addition to AppRole).
+  token: "REPLACE_ME"
