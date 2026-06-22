@@ -1,0 +1,15 @@
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # Bind-mount the host results.db written by the systemd checker.
+      # :ro enforces read-only at the container level, not just in application code.
+      # Run `python -m checker.check` on the host first to create results.db.
+      - ./results.db:/app/results.db:ro
+    environment:
+      EXPIRY_WATCHER_DB: /app/results.db
+      EXPIRY_WATCHER_CHECK_INTERVAL_HOURS: "6"
