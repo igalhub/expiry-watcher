@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Expiry Watcher every 6 hours
+Requires=expiry-watcher.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=6h
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Expiry Watcher — certificate and credential expiry checker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/igalv/claudecode/projects/expiry-watcher
+ExecStart=/home/igalv/claudecode/projects/expiry-watcher/.venv/bin/python -m checker.check
+StandardOutput=journal
+StandardError=journal
