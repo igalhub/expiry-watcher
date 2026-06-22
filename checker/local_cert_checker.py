@@ -9,6 +9,7 @@ from checker.severity import compute_severity
 def check_cert_file(path: str) -> dict:
     checked_at = datetime.now(timezone.utc).isoformat()
     try:
+        # cryptography library used directly — local files have no socket/TLS handshake, so ssl.SSLContext doesn't apply here.
         cert = x509.load_pem_x509_certificate(Path(path).read_bytes())
         expiry = cert.not_valid_after_utc
         days_remaining = (expiry - datetime.now(timezone.utc)).days
