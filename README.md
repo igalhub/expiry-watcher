@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/igalhub/expiry-watcher/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/igalhub/expiry-watcher/actions/workflows/ci.yml)
 
-A cron-driven monitoring tool that detects TLS certificates, local cert files, and Vault credentials approaching expiry, and presents results via a read-only status dashboard.
+A systemd-timer-driven monitoring tool that detects TLS certificates, local cert files, and Vault credentials approaching expiry, and presents results via a read-only status dashboard.
 
 ---
 
