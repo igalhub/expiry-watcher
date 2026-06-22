@@ -10,6 +10,11 @@ from checker.severity import compute_severity
 def check_tls(host: str, port: int = 443, timeout: int = 10) -> dict:
     checked_at = datetime.now(timezone.utc).isoformat()
 
+    # Verification is intentionally disabled — we need to read the cert even
+    # when it's expired or has a hostname mismatch, since those are exactly the
+    # failure states we're trying to detect. Enabling verification here would
+    # cause the function to raise rather than return a result for the most
+    # interesting cases.
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
