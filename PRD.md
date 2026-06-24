@@ -1,6 +1,6 @@
 # PRD — Expiry Watcher
 
-A small, cron-driven monitoring tool that detects certificates, keys, and
+A small, systemd-timer-driven monitoring tool that detects certificates, keys, and
 credentials approaching expiry across multiple sources — TLS endpoints,
 HashiCorp Vault, and the local filesystem — and presents results via a
 read-only status dashboard. Built as a companion to, and consumer of,
@@ -78,7 +78,7 @@ systemd timer / cron
         │     Secrets Demo's existing AppRole pattern)
         └── writes results + timestamp to SQLite
 
-FastAPI app (dashboard.py)
+FastAPI app (dashboard/main.py)
   └── READ-ONLY — queries the same SQLite file, never writes
         ├── GET /status — JSON, all monitored items + severity
         └── GET / — simple HTML table view, color-coded
@@ -98,10 +98,7 @@ is deliberate — see Design decisions below.
 | Known-bad test fixtures (expired.badssl.com, deliberately expired local cert, deliberately short Vault TTL) | Same principle as the Vault project's mutation testing — an expiry detector that's never actually detected an expiry is unverified, not proven |
 | AWS IAM key age deferred to stretch ticket | Keeps v1 scope to checks that can be fully tested today without new cloud credentials; avoids the "13 check types, none well-tested" scope-creep trap |
 
-## Open questions / decisions still needed
+## Decisions made
 
-- Exact severity thresholds (e.g. "warning" at 30 days, "critical" at 7
-  days) — default proposed, adjustable via config
-- Whether `check.py` runs via systemd timer (consistent with your
-  existing IL Job Scraper pattern) or plain cron — leaning systemd timer
-  for consistency with your other local automation
+- Severity thresholds: warning ≤ 30 days, critical ≤ 7 days, expired ≤ 0 days
+- Scheduler: systemd timer (consistent with IL Job Scraper pattern)
