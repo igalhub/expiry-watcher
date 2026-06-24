@@ -442,5 +442,5 @@ actually checked an AWS key is unproven.
 | EW-008 | dashboard | ACCEPTED |
 | EW-009 | CI pipeline | ACCEPTED |
 | EW-010 | README | ACCEPTED |
-| EW-011 | Security audit | OPEN (user only) |
+| EW-011 | Security audit | ACCEPTED |
 | EW-012 | AWS IAM (stretch) | DEFERRED |

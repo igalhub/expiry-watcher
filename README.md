@@ -128,7 +128,7 @@ python -m checker.check          # creates results.db on the host
 docker compose up dashboard      # mounts results.db read-only into the container
 ```
 
-Dashboard is available at **http://localhost:8080**.
+Dashboard is available at **http://localhost:8080**. It supports dark and light mode (defaulting to dark); preference is saved in `localStorage` across sessions.
 
 The docker-compose volume mount (`./results.db:/app/results.db:ro`) binds the exact file the systemd checker writes to. The `:ro` flag enforces read-only at the container level, not just in application code.
 
