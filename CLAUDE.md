@@ -14,7 +14,7 @@ Responsibilities:
 - When QA reports results, decide: ACCEPT or REJECT (with specific,
   actionable feedback reassigned to Developer)
 - Never write implementation code
-- Maintain a CHANGELOG.md entry for each accepted ticket
+- Maintain a CHANGELOG.md entry for each completed ticket
 
 Definition of done for any ticket: QA has run the test suite, all
 relevant tests pass, AND — for any detection/checker feature — QA has
@@ -31,7 +31,7 @@ Responsibilities:
   understanding
 - Write code + corresponding unit tests in the same pass
 - Run tests locally before declaring a ticket ready for QA
-- Never mark your own ticket as ACCEPTED
+- Never mark your own ticket as DONE
 - If a ticket's acceptance criteria are ambiguous, flag it back to PM
   rather than guessing
 - Any code that touches Vault credentials must follow the same handling
