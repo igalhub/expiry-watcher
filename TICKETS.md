@@ -397,18 +397,18 @@ Vault Secrets Demo README.
 **This ticket belongs to the user alone. It is not delegatable.**
 
 **Checklist (to be performed personally):**
-- [ ] `git log --all --full-history -- '*.yaml' '*.env' '*.json'`
+- [x] `git log --all --full-history -- '*.yaml' '*.env' '*.json'`
       — confirm no credential file was ever committed, even in an earlier
       commit that was later deleted
-- [ ] `git log -p | grep -iE 'password|secret|token|role_id|secret_id'`
+- [x] `git log -p | grep -iE 'password|secret|token|role_id|secret_id'`
       — scan full patch history for accidental credential strings
-- [ ] Clean-clone smoke test from a fresh directory: clone the repo,
+- [x] Clean-clone smoke test from a fresh directory: clone the repo,
       follow the README exactly, confirm checker runs and dashboard serves
-- [ ] Manual run-through: confirm all six known states produce correct
+- [x] Manual run-through: confirm all six known states produce correct
       output (healthy cert, expired cert via badssl, healthy local cert,
       expired local cert, healthy Vault token, near-expiry Vault token)
-- [ ] Confirm `results.db` is not present in the published repo
-- [ ] Confirm CI badge is green on `main`
+- [x] Confirm `results.db` is not present in the published repo
+- [x] Confirm CI badge is green on `main`
 
 ---
 
@@ -442,5 +442,5 @@ actually checked an AWS key is unproven.
 | EW-008 | dashboard | ACCEPTED |
 | EW-009 | CI pipeline | ACCEPTED |
 | EW-010 | README | ACCEPTED |
-| EW-011 | Security audit | ACCEPTED |
+| EW-011 | Security audit | ACCEPTED (user only) |
 | EW-012 | AWS IAM (stretch) | DEFERRED |
