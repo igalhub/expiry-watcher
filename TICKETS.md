@@ -432,15 +432,15 @@ actually checked an AWS key is unproven.
 
 | Ticket | Title | Status |
 |---|---|---|
-| EW-001 | Repo scaffolding | ACCEPTED |
-| EW-002 | severity.py | ACCEPTED |
-| EW-003 | tls_checker.py | ACCEPTED |
-| EW-004 | local_cert_checker.py | ACCEPTED |
-| EW-005 | vault_checker.py | ACCEPTED |
-| EW-006 | db.py + check.py | ACCEPTED |
-| EW-007 | systemd timer | ACCEPTED |
-| EW-008 | dashboard | ACCEPTED |
-| EW-009 | CI pipeline | ACCEPTED |
-| EW-010 | README | ACCEPTED |
-| EW-011 | Security audit | ACCEPTED (user only) |
+| EW-001 | Repo scaffolding | DONE |
+| EW-002 | severity.py | DONE |
+| EW-003 | tls_checker.py | DONE |
+| EW-004 | local_cert_checker.py | DONE |
+| EW-005 | vault_checker.py | DONE |
+| EW-006 | db.py + check.py | DONE |
+| EW-007 | systemd timer | DONE |
+| EW-008 | dashboard | DONE |
+| EW-009 | CI pipeline | DONE |
+| EW-010 | README | DONE |
+| EW-011 | Security audit | DONE (user only) |
 | EW-012 | AWS IAM (stretch) | DEFERRED |
