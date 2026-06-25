@@ -59,7 +59,7 @@ that does everything.
   expired local cert file, a healthy Vault secret, and a deliberately
   near-expiry Vault secret — six known states, six correct results
 - The dashboard correctly displays all six, color-coded by severity
-  (healthy / warning / expired), and correctly shows "last checked: stale"
+  (healthy / warning / critical / expired), and correctly shows "last checked: stale"
   if the checker hasn't run recently
 - Full test suite, including mutation tests proving the expiry-detection
   logic actually catches a real expired/expiring asset, not just a
@@ -84,7 +84,7 @@ FastAPI app (dashboard/main.py)
         └── GET / — simple HTML table view, color-coded
 ```
 
-The separation between `check.py` (writer) and `dashboard.py` (reader)
+The separation between `check.py` (writer) and `dashboard/main.py` (reader)
 is deliberate — see Design decisions below.
 
 ## Design decisions and rationale
