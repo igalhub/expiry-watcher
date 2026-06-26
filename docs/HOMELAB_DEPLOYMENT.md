@@ -96,8 +96,8 @@ curl http://localhost:8080/status
 
 ## Access from your main machine
 
-http://<VM_IP>:8080
-http://<VM_IP>:8080/status
+`http://<VM_IP>:8080`
+`http://<VM_IP>:8080/status`
 Replace `<VM_IP>` with your VM's static IP address.
 
 ## Notes
