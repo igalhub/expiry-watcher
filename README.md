@@ -177,6 +177,12 @@ Tests skip automatically with a clear message if Vault is not reachable or is se
 
 Development and testing was done on Linux (Ubuntu, Python 3.12). The systemd units are Linux-only; on other platforms, use cron or a task scheduler as an alternative to automate `python -m checker.check`.
 
+**Home lab (Proxmox VE + Ubuntu Server 24.04.3 VM):** Fully tested —
+all components work as-is. Note that `python3.12-venv` must be
+installed explicitly (`sudo apt install -y python3.12-venv`) as it is
+not included by default on Ubuntu Server. See
+`docs/HOMELAB_DEPLOYMENT.md` for the full walkthrough.
+
 ---
 
 ## What's not in scope

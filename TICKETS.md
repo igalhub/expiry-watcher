@@ -428,6 +428,31 @@ actually checked an AWS key is unproven.
 
 ---
 
+## EW-013 — Home lab deployment documentation
+
+**Goal:** Document deployment on a Proxmox home lab environment,
+including Vault integration and multi-project coexistence.
+
+**Deliverables:**
+- `docs/HOMELAB_DEPLOYMENT.md` — full deployment walkthrough for
+  Proxmox VE + Ubuntu Server VM environment
+- README platform support section updated with home lab notes
+- Vault integration steps documented (vault_setup_test_role.sh)
+- Multi-project coexistence documented (ports, Portainer visibility)
+- Discovered and documented: `python3.12-venv` not installed by
+  default on Ubuntu Server
+
+**Tested on:**
+- Proxmox VE 9.2.3, Beelink SER mini PC
+- Ubuntu Server 24.04.3 LTS VM
+- Docker 29.6.0, Python 3.12
+
+**Dependencies:** EW-010, EW-011
+
+**Status: DONE**
+
+---
+
 ## Ticket status
 
 | Ticket | Title | Status |
@@ -444,3 +469,4 @@ actually checked an AWS key is unproven.
 | EW-010 | README | DONE |
 | EW-011 | Security audit | DONE (user only) |
 | EW-012 | AWS IAM (stretch) | DEFERRED |
+| EW-013 | Home lab deployment documentation | DONE |
