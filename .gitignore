@@ -21,3 +21,6 @@ config/local_*.yaml
 
 # Test fixtures — override global *.pem exclusion; these are fake certs with no secrets
 !tests/fixtures/*.pem
+
+# Claude Code session handoff — machine-local, never committed
+HANDOFF.md
