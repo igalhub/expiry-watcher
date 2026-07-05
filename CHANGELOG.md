@@ -4,6 +4,20 @@ All entries correspond to accepted tickets. Dates reflect the commit date.
 
 ---
 
+## EW-013 — Home lab deployment documentation
+**Accepted:** 2026-06-26
+
+`docs/HOMELAB_DEPLOYMENT.md` — full deployment walkthrough for Proxmox VE +
+Ubuntu Server VM environment. README platform support section updated with
+home lab notes. Vault integration steps documented
+(`vault_setup_test_role.sh`). Multi-project coexistence documented (ports,
+Portainer visibility). Discovered and documented: `python3.12-venv` not
+installed by default on Ubuntu Server. Tested on Proxmox VE 9.2.3
+(Beelink SER mini PC), Ubuntu Server 24.04.3 LTS VM, Docker 29.6.0,
+Python 3.12.
+
+---
+
 ## EW-011 — Pre-publish security/sanity audit
 **Accepted:** 2026-06-25 (user only — non-delegatable)
 
