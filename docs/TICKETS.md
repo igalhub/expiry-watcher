@@ -33,6 +33,8 @@ foundation. No application logic. No credentials.
       surprises and no `.idea/` or `.venv/` files
 - [ ] First commit lands with all of the above plus PRD.md, TICKETS.md,
       CLAUDE.md — verify with `git log --stat`
+      (`PRD.md`/`TICKETS.md` later reorganized into `docs/`; `CLAUDE.md`
+      and `README.md` remain at repo root)
 
 ---
 
