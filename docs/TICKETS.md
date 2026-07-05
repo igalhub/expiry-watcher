@@ -14,24 +14,24 @@ Establish the repository baseline so all subsequent tickets have a clean
 foundation. No application logic. No credentials.
 
 **Acceptance criteria:**
-- [ ] `.gitignore` excludes at minimum: `.idea/`, `.venv/`, `results.db`,
+- [x] `.gitignore` excludes at minimum: `.idea/`, `.venv/`, `results.db`,
       `__pycache__/`, `*.pyc`, `*.pyo`, `.env`, `config/vault.yaml`,
       `config/local_*.yaml`
-- [ ] `LICENSE` present, MIT, copyright Igal Vexler 2026
-- [ ] `README.md` present as a placeholder (single heading only — content is EW-010)
-- [ ] Directory skeleton exists (empty `__init__.py` or `.gitkeep` where needed):
+- [x] `LICENSE` present, MIT, copyright Igal Vexler 2026
+- [x] `README.md` present as a placeholder (single heading only — content is EW-010)
+- [x] Directory skeleton exists (empty `__init__.py` or `.gitkeep` where needed):
       `checker/`, `dashboard/`, `dashboard/templates/`, `config/`, `tests/`, `systemd/`
-- [ ] `requirements.txt` lists runtime deps with pinned versions:
+- [x] `requirements.txt` lists runtime deps with pinned versions:
       `fastapi`, `uvicorn`, `cryptography`, `hvac`, `pyyaml`
-- [ ] `requirements-dev.txt` lists dev deps with pinned versions:
+- [x] `requirements-dev.txt` lists dev deps with pinned versions:
       `pytest`, `pytest-cov`, `httpx` (for FastAPI test client)
-- [ ] `config/targets.yaml.example` exists as a template with no real
+- [x] `config/targets.yaml.example` exists as a template with no real
       hostnames, credentials, or paths — all values are obviously fake
       placeholders (e.g. `vault_url: "http://localhost:8200"`,
       `role_id: "REPLACE_ME"`)
-- [ ] `git status` after the commit shows a clean tree with no untracked
+- [x] `git status` after the commit shows a clean tree with no untracked
       surprises and no `.idea/` or `.venv/` files
-- [ ] First commit lands with all of the above plus PRD.md, TICKETS.md,
+- [x] First commit lands with all of the above plus PRD.md, TICKETS.md,
       CLAUDE.md — verify with `git log --stat`
       (`PRD.md`/`TICKETS.md` later reorganized into `docs/`; `CLAUDE.md`
       and `README.md` remain at repo root)
@@ -47,10 +47,10 @@ Single module with one pure function. No I/O, no external deps. The
 threshold logic every other module imports.
 
 **Acceptance criteria:**
-- [ ] `checker/severity.py` exports `compute_severity(days_remaining: int) -> str`
-- [ ] Return values are exactly the strings `"healthy"`, `"warning"`,
+- [x] `checker/severity.py` exports `compute_severity(days_remaining: int) -> str`
+- [x] Return values are exactly the strings `"healthy"`, `"warning"`,
       `"critical"`, `"expired"` — no other strings, no variations
-- [ ] Boundary behaviour (all must be verified by the test suite):
+- [x] Boundary behaviour (all must be verified by the test suite):
 
   | `days_remaining` | expected |
   |---|---|
@@ -63,10 +63,10 @@ threshold logic every other module imports.
   | 31 | `"healthy"` |
   | 365| `"healthy"` |
 
-- [ ] `tests/test_severity.py` covers every row in the table above as a
+- [x] `tests/test_severity.py` covers every row in the table above as a
       named test case — not a single parametrize with unlabelled values
-- [ ] `pytest tests/test_severity.py -v` passes with 0 failures, 0 errors
-- [ ] No imports beyond the Python stdlib in `severity.py`
+- [x] `pytest tests/test_severity.py -v` passes with 0 failures, 0 errors
+- [x] No imports beyond the Python stdlib in `severity.py`
 
 ---
 
@@ -81,27 +81,27 @@ Check TLS certificates for a list of remote endpoints. Use only stdlib
 use stdlib). Record days remaining and severity.
 
 **Acceptance criteria:**
-- [ ] `checker/tls_checker.py` exports
+- [x] `checker/tls_checker.py` exports
       `check_tls(host: str, port: int = 443, timeout: int = 10) -> dict`
-- [ ] Returned dict contains keys: `host`, `port`, `days_remaining` (int),
+- [x] Returned dict contains keys: `host`, `port`, `days_remaining` (int),
       `severity` (str), `checked_at` (ISO-8601 UTC string), `error` (str or None)
-- [ ] On a healthy domain, `severity` is `"healthy"` and `error` is `None`
-- [ ] On `expired.badssl.com`, `severity` is `"expired"` and
+- [x] On a healthy domain, `severity` is `"healthy"` and `error` is `None`
+- [x] On `expired.badssl.com`, `severity` is `"expired"` and
       `days_remaining` is ≤ 0 — **this must be run and the actual output
       shown, not assumed**
-- [ ] On a connection failure or timeout, `error` is a non-empty string,
+- [x] On a connection failure or timeout, `error` is a non-empty string,
       `days_remaining` is `None`, `severity` is `None`
-- [ ] `tests/test_tls_checker.py` covers:
+- [x] `tests/test_tls_checker.py` covers:
       - at least one healthy domain (a domain that will stay healthy —
         not a personal domain; e.g. `google.com`)
       - `expired.badssl.com` — asserts `severity == "expired"` and
         `days_remaining <= 0`
       - a hostname that doesn't resolve — asserts `error` is not None
-- [ ] Tests that hit the network are marked `@pytest.mark.network` so CI
+- [x] Tests that hit the network are marked `@pytest.mark.network` so CI
       can skip them when network is unavailable
-- [ ] `pytest tests/test_tls_checker.py -v -m "not network"` passes (the
+- [x] `pytest tests/test_tls_checker.py -v -m "not network"` passes (the
       offline/error-path tests must not require network)
-- [ ] `pytest tests/test_tls_checker.py -v -m network` passes when run
+- [x] `pytest tests/test_tls_checker.py -v -m network` passes when run
       with a live internet connection — Developer must run this and show output
 
 ---
@@ -116,28 +116,28 @@ Check PEM/DER certificate files on the local filesystem. Uses the
 machine-generated with obviously fake identifiers — never real certs.
 
 **Acceptance criteria:**
-- [ ] `checker/local_cert_checker.py` exports
+- [x] `checker/local_cert_checker.py` exports
       `check_cert_file(path: str) -> dict`
-- [ ] Returned dict contains keys: `path`, `days_remaining` (int),
+- [x] Returned dict contains keys: `path`, `days_remaining` (int),
       `severity` (str), `checked_at` (ISO-8601 UTC string), `error` (str or None)
-- [ ] Test fixtures live in `tests/fixtures/`:
+- [x] Test fixtures live in `tests/fixtures/`:
       - `valid_cert.pem` — self-signed, CN=valid-test-cert.invalid,
         expiry ≥ 90 days from generation date
       - `expired_cert.pem` — self-signed, CN=expired-test-cert.invalid,
         `notAfter` set to a date in the past (e.g. 2020-01-01)
       - Both generated by the test setup or a checked-in generation
         script — **neither is a real production cert**
-- [ ] `check_cert_file("tests/fixtures/valid_cert.pem")` returns
+- [x] `check_cert_file("tests/fixtures/valid_cert.pem")` returns
       `severity == "healthy"`
-- [ ] `check_cert_file("tests/fixtures/expired_cert.pem")` returns
+- [x] `check_cert_file("tests/fixtures/expired_cert.pem")` returns
       `severity == "expired"` and `days_remaining <= 0` — **run and show output**
-- [ ] `check_cert_file("/nonexistent/path.pem")` returns a non-empty
+- [x] `check_cert_file("/nonexistent/path.pem")` returns a non-empty
       `error` string, `days_remaining` is `None`
-- [ ] `tests/test_local_cert_checker.py` covers all three cases above,
+- [x] `tests/test_local_cert_checker.py` covers all three cases above,
       plus one near-expiry fixture (≤ 7 days) asserting `severity == "critical"`
-- [ ] `pytest tests/test_local_cert_checker.py -v` passes with 0 failures,
+- [x] `pytest tests/test_local_cert_checker.py -v` passes with 0 failures,
       0 errors — no network required
-- [ ] Fixtures are committed to git (they contain no secrets — only fake
+- [x] Fixtures are committed to git (they contain no secrets — only fake
       test CN values and public-key material)
 
 ---
@@ -186,38 +186,38 @@ attempting any Vault checks and write a structured error to the db (not
 crash) if the health check fails.
 
 **Acceptance criteria:**
-- [ ] `checker/vault_checker.py` exports:
+- [x] `checker/vault_checker.py` exports:
       - `check_vault_health(vault_url: str) -> dict` (see spec above)
       - `check_vault_token(vault_url: str, token: str) -> dict`
       - `check_vault_approle(vault_url: str, role_id: str, secret_id: str) -> dict`
-- [ ] Each result dict from `check_vault_token` / `check_vault_approle`
+- [x] Each result dict from `check_vault_token` / `check_vault_approle`
       contains: `name` (str), `type` (str), `days_remaining` (float rounded
       to 2dp), `severity` (str), `checked_at` (ISO-8601 UTC string),
       `error` (str or None)
-- [ ] A `scripts/vault_setup_test_role.sh` script (committed, no secrets
+- [x] A `scripts/vault_setup_test_role.sh` script (committed, no secrets
       hardcoded) creates the `expiry-watcher-test-short-ttl` AppRole in the
       running Vault instance with `token_ttl=6d` (≤ 7 days → `"critical"`).
       The script prints the generated `role_id` and `secret_id` to stdout
       for the user to copy into `config/vault.yaml` — it does not write
       them anywhere automatically
-- [ ] `check_vault_token` against a token with a known TTL > 30 days
+- [x] `check_vault_token` against a token with a known TTL > 30 days
       returns `severity == "healthy"` — shown with actual output
-- [ ] `check_vault_approle` against the `expiry-watcher-test-short-ttl`
+- [x] `check_vault_approle` against the `expiry-watcher-test-short-ttl`
       role (TTL ≤ 7 days) returns `severity == "critical"` — **shown
       with actual Vault output, not assumed**
-- [ ] On Vault unreachable, `check_vault_health` returns `reachable: false`;
+- [x] On Vault unreachable, `check_vault_health` returns `reachable: false`;
       `check_vault_token` / `check_vault_approle` return `error` non-empty,
       `days_remaining` None
-- [ ] No credentials appear in any test file, test output, log line, or
+- [x] No credentials appear in any test file, test output, log line, or
       script — only `vault_url` is acceptable as plaintext
-- [ ] `tests/test_vault_checker.py`:
+- [x] `tests/test_vault_checker.py`:
       - offline tests mock the hvac client and the health endpoint; cover:
         healthy TTL, near-expiry TTL, unreachable Vault, sealed Vault
       - live tests marked `@pytest.mark.vault`; each begins with the
         `check_vault_health()` prerequisite skip guard described above
-- [ ] `pytest tests/test_vault_checker.py -v -m "not vault"` passes
+- [x] `pytest tests/test_vault_checker.py -v -m "not vault"` passes
       without a running Vault instance
-- [ ] `pytest tests/test_vault_checker.py -v -m vault` passes against the
+- [x] `pytest tests/test_vault_checker.py -v -m vault` passes against the
       live Vault Secrets Demo instance — Developer runs this, shows full
       pytest output AND the `journalctl` / `vault token lookup` output that
       confirms the short-TTL role's actual TTL
@@ -235,28 +235,28 @@ helpers. `check.py` is the entry point — reads `config/targets.yaml`,
 calls checkers, writes results.
 
 **Acceptance criteria:**
-- [ ] `checker/db.py` exports:
+- [x] `checker/db.py` exports:
       - `init_db(path: str)` — creates the schema if it doesn't exist
       - `write_results(path: str, results: list[dict])` — upserts results
         + sets `last_checked` timestamp
       - `read_results(path: str) -> list[dict]`
       - `get_last_checked(path: str) -> datetime | None`
-- [ ] SQLite schema has at minimum: `id`, `name`, `type`, `days_remaining`,
+- [x] SQLite schema has at minimum: `id`, `name`, `type`, `days_remaining`,
       `severity`, `checked_at`, `error`
-- [ ] `checker/check.py` is a runnable script (`python checker/check.py`):
+- [x] `checker/check.py` is a runnable script (`python checker/check.py`):
       - reads `config/targets.yaml`
       - runs all enabled checkers
       - writes to `results.db` (path configurable via env var or arg)
       - exits 0 on completion (checker errors are written to the db,
         not raised as process-level failures)
-- [ ] After a run of `check.py` against real test targets, `read_results()`
+- [x] After a run of `check.py` against real test targets, `read_results()`
       returns at least one row per enabled target — **verified by actually
       running it and printing results**
-- [ ] `tests/test_db.py` covers `init_db`, `write_results`, `read_results`,
+- [x] `tests/test_db.py` covers `init_db`, `write_results`, `read_results`,
       `get_last_checked` using an in-memory SQLite (`":memory:"`), not a
       real file — no I/O side-effects in tests
-- [ ] `pytest tests/test_db.py -v` passes with 0 failures, 0 errors
-- [ ] `results.db` does not appear in `git status` after a run (covered by
+- [x] `pytest tests/test_db.py -v` passes with 0 failures, 0 errors
+- [x] `results.db` does not appear in `git status` after a run (covered by
       `.gitignore` from EW-001)
 
 ---
@@ -271,21 +271,21 @@ This ticket is not done until the timer has actually fired and the service
 has run — not just that the unit files look correct.
 
 **Acceptance criteria:**
-- [ ] `systemd/expiry-watcher.service` runs `check.py` from the correct
+- [x] `systemd/expiry-watcher.service` runs `check.py` from the correct
       working directory with the correct Python interpreter (from `.venv`)
-- [ ] `systemd/expiry-watcher.timer` triggers the service; default interval
+- [x] `systemd/expiry-watcher.timer` triggers the service; default interval
       is 6 hours, configurable by editing the unit file
-- [ ] `systemd/install.sh` (or inline instructions in README) copies units
+- [x] `systemd/install.sh` (or inline instructions in README) copies units
       to `~/.config/systemd/user/`, runs `systemctl --user daemon-reload`,
       enables and starts the timer
-- [ ] `systemctl --user status expiry-watcher.timer` shows `active (waiting)`
+- [x] `systemctl --user status expiry-watcher.timer` shows `active (waiting)`
       — verified with actual command output shown
-- [ ] `systemctl --user start expiry-watcher.service` triggers a manual run
+- [x] `systemctl --user start expiry-watcher.service` triggers a manual run
       that completes successfully and writes to `results.db`
       — verified with `journalctl --user -u expiry-watcher.service` output shown
-- [ ] `journalctl` output contains no credential strings
-- [ ] `systemctl --user stop expiry-watcher.timer` stops future runs cleanly
-- [ ] Unit files are committed; `results.db` is not
+- [x] `journalctl` output contains no credential strings
+- [x] `systemctl --user stop expiry-watcher.timer` stops future runs cleanly
+- [x] Unit files are committed; `results.db` is not
 
 ---
 
@@ -300,28 +300,28 @@ detection: if `last_checked` is older than 2× the check interval (12h),
 the dashboard visibly flags itself as stale.
 
 **Acceptance criteria:**
-- [ ] `dashboard/main.py` is a runnable FastAPI app
-- [ ] `GET /status` returns JSON: list of all monitored items, each with
+- [x] `dashboard/main.py` is a runnable FastAPI app
+- [x] `GET /status` returns JSON: list of all monitored items, each with
       `name`, `type`, `days_remaining`, `severity`, `checked_at`, `error`
       — plus a top-level `last_checked` timestamp and `stale: bool`
-- [ ] `GET /` returns an HTML table, color-coded by severity:
+- [x] `GET /` returns an HTML table, color-coded by severity:
       healthy=green, warning=amber, critical/expired=red
-- [ ] HTML page shows "Last checked: X minutes ago" and turns visually
+- [x] HTML page shows "Last checked: X minutes ago" and turns visually
       distinct (e.g. banner, red border) when `stale == true`
-- [ ] No code path in `dashboard/` calls any write function — confirmed by
+- [x] No code path in `dashboard/` calls any write function — confirmed by
       code review and by a test that monkeypatches `write_results` to raise
       and confirms no dashboard endpoint triggers it
-- [ ] `tests/test_dashboard.py` uses FastAPI's `TestClient` (via httpx):
+- [x] `tests/test_dashboard.py` uses FastAPI's `TestClient` (via httpx):
       - `GET /status` returns 200 with correct JSON shape
       - `GET /` returns 200 with HTML containing severity classes
       - Staleness: seed `results.db` with an old `last_checked` timestamp,
         assert `stale == true` in the response
       - Read-only: assert no write function is called during any request
-- [ ] `pytest tests/test_dashboard.py -v` passes with 0 failures
-- [ ] `docker-compose.yml` starts the dashboard successfully
+- [x] `pytest tests/test_dashboard.py -v` passes with 0 failures
+- [x] `docker-compose.yml` starts the dashboard successfully
       (`docker compose up dashboard` → `GET /` returns 200)
       — verified with actual `curl` output shown
-- [ ] `docker-compose.yml` mounts the host `results.db` into the container
+- [x] `docker-compose.yml` mounts the host `results.db` into the container
       at the path the dashboard reads from, explicitly — e.g.:
       ```yaml
       volumes:
@@ -330,7 +330,7 @@ the dashboard visibly flags itself as stale.
       The `:ro` flag is required (dashboard is read-only; enforce it at
       the mount level too). The host path must be the same file `check.py`
       writes to, not a copy or a separately-named file
-- [ ] Cross-process read verified end-to-end: run `python checker/check.py`
+- [x] Cross-process read verified end-to-end: run `python checker/check.py`
       on the host (simulating the systemd service), then immediately call
       `GET /status` on the running dashboard container and confirm the
       response contains rows from that run — verified by showing the
@@ -350,17 +350,17 @@ GitHub Actions workflow that runs on every push and PR. Network-dependent
 tests (TLS live, Vault live) are skipped in CI; everything else must pass.
 
 **Acceptance criteria:**
-- [ ] `.github/workflows/ci.yml` exists and runs on `push` and
+- [x] `.github/workflows/ci.yml` exists and runs on `push` and
       `pull_request` to `main`
-- [ ] CI steps: checkout → set up Python → install deps (both
+- [x] CI steps: checkout → set up Python → install deps (both
       `requirements.txt` and `requirements-dev.txt`) → run pytest with
       `-m "not network and not vault"`
-- [ ] CI passes on a clean push with no local state — verified by pushing
+- [x] CI passes on a clean push with no local state — verified by pushing
       and reading the actual Actions run result, not just the local run
-- [ ] CI run URL is recorded in the ticket acceptance sign-off comment
-- [ ] No secrets or vault credentials appear in the CI workflow file or
+- [x] CI run URL is recorded in the ticket acceptance sign-off comment
+- [x] No secrets or vault credentials appear in the CI workflow file or
       in any CI log — confirmed by reading the raw job log
-- [ ] Badge added to README.md placeholder (EW-010 will flesh out the rest)
+- [x] Badge added to README.md placeholder (EW-010 will flesh out the rest)
 
 ---
 
@@ -374,21 +374,21 @@ and what's explicitly out of scope (AWS). Same honesty standard as the
 Vault Secrets Demo README.
 
 **Acceptance criteria:**
-- [ ] Sections: What this is / Architecture (diagram) / Setup / Running
+- [x] Sections: What this is / Architecture (diagram) / Setup / Running
       the checker / Running the dashboard / Running tests / Platform support
       / What's not in scope
-- [ ] Architecture section accurately reflects the two-process split and
+- [x] Architecture section accurately reflects the two-process split and
       explains why (not just what)
-- [ ] Setup section covers: clone → create `.venv` → `pip install` →
+- [x] Setup section covers: clone → create `.venv` → `pip install` →
       copy `config/targets.yaml.example` to `config/targets.yaml` and fill
       in values → (optionally) install systemd units
-- [ ] Platform support section is explicit: tested on Linux; macOS and
+- [x] Platform support section is explicit: tested on Linux; macOS and
       Windows are untested; systemd units are Linux-only
-- [ ] "What's not in scope" section references EW-012 (AWS) as a stretch
+- [x] "What's not in scope" section references EW-012 (AWS) as a stretch
       ticket, not a supported feature
-- [ ] Fresh-clone smoke test performed by Developer: follow the README
+- [x] Fresh-clone smoke test performed by Developer: follow the README
       from a clean directory, confirm each step works as written
-- [ ] No placeholder text, no "TODO" lines left in the final README
+- [x] No placeholder text, no "TODO" lines left in the final README
 
 ---
 
