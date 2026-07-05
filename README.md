@@ -85,7 +85,7 @@ cp config/vault.yaml.example config/vault.yaml
 bash systemd/install.sh
 ```
 
-This copies `expiry-watcher.service` and `expiry-watcher.timer` to `~/.config/systemd/user/`, reloads the daemon, and enables and starts the timer. The checker runs 5 minutes after boot and then every 6 hours.
+This copies `expiry-watcher.service` and `expiry-watcher.timer` to `~/.config/systemd/user/`, reloads the daemon, and enables and starts the timer. The checker runs 5 minutes after boot and then every 6 hours. The unit file assumes the repo is cloned to `~/claudecode/projects/expiry-watcher` (via systemd's `%h` specifier) — edit the paths in `expiry-watcher.service` if you've cloned it elsewhere.
 
 ---
 
