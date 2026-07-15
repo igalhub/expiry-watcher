@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -149,21 +150,27 @@ def test_secret_id_healthy_unbounded():
 
 def test_secret_id_critical_ttl():
     mock_client = MagicMock()
-    mock_client.auth.approle.read_secret_id.return_value = {"data": {"secret_id_ttl": 5 * 86400}}
+    expiration = (datetime.now(timezone.utc) + timedelta(days=5)).isoformat()
+    mock_client.auth.approle.read_secret_id.return_value = {
+        "data": {"secret_id_ttl": 5 * 86400, "expiration_time": expiration}
+    }
     with patch("hvac.Client", return_value=mock_client):
         result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
     assert result["error"] is None
-    assert result["days_remaining"] == 5.0
+    assert result["days_remaining"] == pytest.approx(5.0, abs=0.01)
     assert result["severity"] == "critical"
 
 
 def test_secret_id_warning_ttl():
     mock_client = MagicMock()
-    mock_client.auth.approle.read_secret_id.return_value = {"data": {"secret_id_ttl": 20 * 86400}}
+    expiration = (datetime.now(timezone.utc) + timedelta(days=20)).isoformat()
+    mock_client.auth.approle.read_secret_id.return_value = {
+        "data": {"secret_id_ttl": 20 * 86400, "expiration_time": expiration}
+    }
     with patch("hvac.Client", return_value=mock_client):
         result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
     assert result["error"] is None
-    assert result["days_remaining"] == 20.0
+    assert result["days_remaining"] == pytest.approx(20.0, abs=0.01)
     assert result["severity"] == "warning"
 
 
@@ -175,6 +182,34 @@ def test_secret_id_vault_error():
     assert result["error"] is not None
     assert result["days_remaining"] is None
     assert result["severity"] is None
+
+
+def test_secret_id_days_remaining_is_live_countdown():
+    # The regression this guards: check_vault_secret_id() must compute
+    # days_remaining from expiration_time (a live countdown), not the
+    # static secret_id_ttl field, which never changes as time passes.
+    mock_client = MagicMock()
+    fixed_expiration = "2026-07-20T16:47:21.613525814Z"
+    mock_client.auth.approle.read_secret_id.return_value = {
+        "data": {"secret_id_ttl": 5 * 86400, "expiration_time": fixed_expiration}
+    }
+    with patch("hvac.Client", return_value=mock_client):
+        with patch("checker.vault_checker.datetime") as mock_dt:
+            # fromisoformat must stay real — patch() otherwise replaces it
+            # with an auto-mock, breaking the datetime subtraction downstream.
+            mock_dt.fromisoformat = datetime.fromisoformat
+
+            mock_dt.now.return_value = datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc)
+            result_1 = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+
+            mock_dt.now.return_value = datetime(2026, 7, 16, 12, 0, 0, tzinfo=timezone.utc)
+            result_2 = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+
+    assert result_1["error"] is None
+    assert result_2["error"] is None
+    assert result_1["days_remaining"] is not None
+    assert result_2["days_remaining"] < result_1["days_remaining"]
+    assert (result_1["days_remaining"] - result_2["days_remaining"]) == pytest.approx(1.0, abs=0.01)
 
 
 # --- live vault tests ---
