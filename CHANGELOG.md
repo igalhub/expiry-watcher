@@ -4,6 +4,28 @@ All entries correspond to accepted tickets. Dates reflect the commit date.
 
 ---
 
+## EW-014 — Vault AppRole `secret_id` TTL check
+**Accepted:** 2026-07-15 · commit `58e269c`
+
+`checker/vault_checker.py` exports `check_vault_secret_id(vault_url, role_name,
+secret_id, lookup_token, name) -> dict`, closing the gap left by
+`check_vault_approle` (EW-005), which only ever reported the login token's
+lease TTL, never the `secret_id` credential's own TTL. Uses a read-only
+lookup (`auth/approle/role/<role_name>/secret-id/lookup`) authenticated by a
+narrowly-scoped `lookup_token` — a distinct credential from the
+`role_id`/`secret_id` login pair, never conflated with it.
+`scripts/vault_setup_test_role.sh` now mints that `lookup_token` (bound to a
+policy scoped to exactly one path) and a dedicated `ttl=5d` test `secret_id`,
+script-driven end-to-end. Both directions proven with real Vault output:
+healthy (unbounded `secret_id`) → `"healthy"`; the `5d` test `secret_id` →
+`"critical"`. Confirmed live: the shared `approle` auth mount's
+`max_lease_ttl` (90d) caps `secret_id` `ttl` the same way it caps
+login-token leases — documented in `docs/HOMELAB_DEPLOYMENT.md` and
+`docs/SPEC.md`; not a blocker since the test value (5d) is far under the
+cap. `dashboard/` confirmed untouched.
+
+---
+
 ## EW-013 — Home lab deployment documentation
 **Accepted:** 2026-06-26
 
