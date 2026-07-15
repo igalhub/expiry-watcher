@@ -136,6 +136,11 @@ CREATE TABLE IF NOT EXISTS metadata (
 );
 ```
 
+`write_results` writes `days_remaining` as whatever numeric type each
+checker returns (`int` or `float`) — no truncation is applied on write,
+so Vault's fractional-day values (see above) are preserved exactly rather
+than rounded down to whole days.
+
 Upsert key is `(name, type)` — e.g. `("vault", "vault-health")` or a
 hostname + `"tls"`. `metadata` is a single-row-per-key table used to
 store `last_checked` (updated every run, independent of whether any
