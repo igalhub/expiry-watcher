@@ -541,41 +541,41 @@ assumed — caught by live verification rather than trusted from
 documentation.
 
 **Acceptance criteria:**
-- [ ] `check_vault_secret_id()` keeps `secret_id_ttl == 0` as the
+- [x] `check_vault_secret_id()` keeps `secret_id_ttl == 0` as the
       unbounded/healthy gate (unchanged, still correct — no need to
       parse the sentinel timestamp)
-- [ ] Non-zero branch computes `days_remaining` from
+- [x] Non-zero branch computes `days_remaining` from
       `(expiration_time - now) / 86400`, rounded to 2 decimals, replacing
       the `secret_id_ttl / 86400` calculation
-- [ ] Same `compute_severity(int(days_remaining))` call, same return
+- [x] Same `compute_severity(int(days_remaining))` call, same return
       dict shape — no new threshold logic, no new keys
-- [ ] A new offline test proves `days_remaining` is a live countdown, not
+- [x] A new offline test proves `days_remaining` is a live countdown, not
       a static snapshot: mocks a **fixed** `expiration_time`, patches
       `checker.vault_checker.datetime.now` to two different values a
       known duration apart (with `datetime.fromisoformat` explicitly
       wired to the real implementation, not left as an auto-mock), and
       asserts the two calls' `days_remaining` differ by the correct
       amount and decrease over time
-- [ ] Existing point-in-time classification tests (`critical`/`warning`
+- [x] Existing point-in-time classification tests (`critical`/`warning`
       bands) updated to include a computed `expiration_time`, with
       tolerance (`pytest.approx` or equivalent) since wall-clock time at
       test setup vs. inside the function will differ by microseconds
-- [ ] The existing live test (`test_live_secret_id_short_ttl`) serves as
+- [x] The existing live test (`test_live_secret_id_short_ttl`) serves as
       the confirmatory live check — no wall-clock-sleep test used to
       prove decay (movement at typical short TTLs is far below
       2-decimal-place rounding)
-- [ ] `docs/SPEC.md`'s `check_vault_secret_id` description updated to
+- [x] `docs/SPEC.md`'s `check_vault_secret_id` description updated to
       describe the `expiration_time`-based calculation
-- [ ] No changes to `dashboard/`, `tests/test_dashboard.py`,
+- [x] No changes to `dashboard/`, `tests/test_dashboard.py`,
       `lookup_token`/`role_name` credential design, or
       `scripts/vault_setup_test_role.sh`
-- [ ] `docs/TICKETS.md`'s EW-014 section left untouched except for an
+- [x] `docs/TICKETS.md`'s EW-014 section left untouched except for an
       additive forward-reference note — not rewritten as if EW-014
       anticipated this gap
-- [ ] `git diff --stat` confined to `checker/vault_checker.py`,
+- [x] `git diff --stat` confined to `checker/vault_checker.py`,
       `tests/test_vault_checker.py`, `docs/SPEC.md`, `docs/TICKETS.md`
 
-**Status: READY FOR QA**
+**Status: DONE**
 
 ---
 
@@ -686,4 +686,4 @@ claim at the time.
 | EW-013 | Home lab deployment documentation | DONE |
 | EW-014 | Vault AppRole secret_id TTL check | DONE |
 | EW-015 | Fix days_remaining precision truncation in db.py | DONE |
-| EW-016 | Fix check_vault_secret_id() to use live expiration_time | READY FOR QA |
+| EW-016 | Fix check_vault_secret_id() to use live expiration_time | DONE |
