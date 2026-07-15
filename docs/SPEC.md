@@ -99,10 +99,19 @@ Four independent functions, all returning the same result shape
   `role_id`/`secret_id` login pair — it authenticates as a bearer token
   scoped by a narrow named policy, never derived from or interchangeable
   with the login flow. Unlike `check_vault_approle`, this call does not
-  consume or rotate the `secret_id` — it's a pure read. Reads
-  `secret_id_ttl` (seconds) from the response; same `ttl == 0` →
-  healthy/`None` handling as the other two TTL checks. Requires `role_name`
-  (the AppRole's name, distinct from the `role_id` UUID used for login).
+  consume or rotate the `secret_id` — it's a pure read. Requires
+  `role_name` (the AppRole's name, distinct from the `role_id` UUID used
+  for login). Reads `secret_id_ttl` (seconds) from the response purely to
+  detect the unbounded case (`secret_id_ttl == 0` → healthy/`None`,
+  same pattern as the other two TTL checks) — that value is a **static
+  configured duration**, not a live countdown, so it does not otherwise
+  drive `days_remaining`. When non-zero, `days_remaining` is computed
+  from the live `expiration_time` field instead
+  (`(expiration_time - now) / 86400`, rounded to 2 decimals), so the
+  value counts down in real time toward `0` rather than staying fixed at
+  the originally configured TTL (EW-016; the original EW-014 version of
+  this function read `secret_id_ttl` directly for this calculation,
+  which never changed as time passed — a real bug, corrected here).
 
 **Confirmed constraint (live-verified, EW-014):** on this project's shared
 Vault dev instance, the `approle` auth mount's `max_lease_ttl` (2160h/90d)
@@ -112,9 +121,18 @@ silently capped, not rejected. See `docs/HOMELAB_DEPLOYMENT.md` for the
 full finding; keep any `secret_id` `ttl` used for testing well under 90d
 on this shared instance.
 
-Days-remaining values for Vault are `ttl_seconds / 86400` rounded to 2
-decimal places (fractional days are meaningful at Vault's typical
-hour-to-day TTL scale, unlike cert expiry which is whole days).
+**Confirmed response shape (live-verified, EW-016):** Vault's unbounded
+case (`secret_id_ttl == 0`) sets `expiration_time` to Go's zero-value
+sentinel timestamp (`"0001-01-01T00:00:00Z"`), not an empty string —
+irrelevant to `check_vault_secret_id()` itself since the `secret_id_ttl
+== 0` gate short-circuits before that field is ever parsed, but worth
+knowing if extending this function later.
+
+Days-remaining values for `check_vault_token` and `check_vault_approle`
+are `ttl_seconds / 86400` rounded to 2 decimal places (fractional days
+are meaningful at Vault's typical hour-to-day TTL scale, unlike cert
+expiry which is whole days) — `check_vault_secret_id` uses the
+`expiration_time`-based calculation described above instead, per EW-016.
 
 ## `checker/db.py`
 

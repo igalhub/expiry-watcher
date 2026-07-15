@@ -86,7 +86,10 @@ def check_vault_secret_id(
                 "days_remaining": None, "severity": "healthy",
                 "checked_at": checked_at, "error": None,
             }
-        days_remaining = round(ttl_seconds / 86400, 2)
+        # secret_id_ttl is a static configured duration, not a live
+        # countdown — compute the actual remaining time from expiration_time.
+        expiration = datetime.fromisoformat(data["expiration_time"])
+        days_remaining = round((expiration - datetime.now(timezone.utc)).total_seconds() / 86400, 2)
         return {
             "name": name, "type": "vault-secret-id",
             "days_remaining": days_remaining,

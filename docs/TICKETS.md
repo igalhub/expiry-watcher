@@ -514,6 +514,71 @@ binding the raw value directly is sufficient.
 
 ---
 
+## EW-016 — Fix `check_vault_secret_id()` to use live `expiration_time`
+
+**Depends on:** EW-014
+
+**Description:**
+`checker/vault_checker.py`'s `check_vault_secret_id()` (EW-014) computes
+`days_remaining` from Vault's `secret_id_ttl` field — a **static,
+configured duration** that never changes as time passes, not a live
+countdown. Confirmed live during EW-015's QA: it returned exactly `5.0`
+days both immediately after minting and 27 minutes later, while the
+actual time-to-expiration (`expiration_time - now`) had already dropped
+to `4.98`. This means the check never shows warning→critical progression
+as a `secret_id` ages — it reports a flat value until the credential
+fails outright, defeating the entire purpose of EW-014 and this
+project's Definition of Done ("a detector that's never been shown to
+actually detect something is not done").
+
+Verified live before implementing (raw `read_secret_id()` response
+shapes): non-unbounded case includes `expiration_time` as an RFC3339
+string with nanosecond precision (e.g.
+`"2026-07-20T16:47:21.613525814Z"`); the unbounded case (`secret_id_ttl
+== 0`) has `expiration_time` set to Go's zero-value sentinel timestamp
+(`"0001-01-01T00:00:00Z"`), **not** an empty string as an earlier draft
+assumed — caught by live verification rather than trusted from
+documentation.
+
+**Acceptance criteria:**
+- [ ] `check_vault_secret_id()` keeps `secret_id_ttl == 0` as the
+      unbounded/healthy gate (unchanged, still correct — no need to
+      parse the sentinel timestamp)
+- [ ] Non-zero branch computes `days_remaining` from
+      `(expiration_time - now) / 86400`, rounded to 2 decimals, replacing
+      the `secret_id_ttl / 86400` calculation
+- [ ] Same `compute_severity(int(days_remaining))` call, same return
+      dict shape — no new threshold logic, no new keys
+- [ ] A new offline test proves `days_remaining` is a live countdown, not
+      a static snapshot: mocks a **fixed** `expiration_time`, patches
+      `checker.vault_checker.datetime.now` to two different values a
+      known duration apart (with `datetime.fromisoformat` explicitly
+      wired to the real implementation, not left as an auto-mock), and
+      asserts the two calls' `days_remaining` differ by the correct
+      amount and decrease over time
+- [ ] Existing point-in-time classification tests (`critical`/`warning`
+      bands) updated to include a computed `expiration_time`, with
+      tolerance (`pytest.approx` or equivalent) since wall-clock time at
+      test setup vs. inside the function will differ by microseconds
+- [ ] The existing live test (`test_live_secret_id_short_ttl`) serves as
+      the confirmatory live check — no wall-clock-sleep test used to
+      prove decay (movement at typical short TTLs is far below
+      2-decimal-place rounding)
+- [ ] `docs/SPEC.md`'s `check_vault_secret_id` description updated to
+      describe the `expiration_time`-based calculation
+- [ ] No changes to `dashboard/`, `tests/test_dashboard.py`,
+      `lookup_token`/`role_name` credential design, or
+      `scripts/vault_setup_test_role.sh`
+- [ ] `docs/TICKETS.md`'s EW-014 section left untouched except for an
+      additive forward-reference note — not rewritten as if EW-014
+      anticipated this gap
+- [ ] `git diff --stat` confined to `checker/vault_checker.py`,
+      `tests/test_vault_checker.py`, `docs/SPEC.md`, `docs/TICKETS.md`
+
+**Status: READY FOR QA**
+
+---
+
 ## EW-014 — Vault AppRole `secret_id` TTL check
 
 **Depends on:** EW-005
@@ -593,6 +658,13 @@ narrowly-scoped credential — never conflated with the login pair.
 
 **Status: DONE**
 
+**Note:** see EW-016 — `check_vault_secret_id()`'s `days_remaining`
+calculation was corrected to use `expiration_time` instead of the static
+`secret_id_ttl` field. The classification proof above was and remains
+accurate for what it tested (point-in-time healthy/critical
+classification); the gap was an incomplete criteria list, not a false
+claim at the time.
+
 ---
 
 ## Ticket status
@@ -614,3 +686,4 @@ narrowly-scoped credential — never conflated with the login pair.
 | EW-013 | Home lab deployment documentation | DONE |
 | EW-014 | Vault AppRole secret_id TTL check | DONE |
 | EW-015 | Fix days_remaining precision truncation in db.py | DONE |
+| EW-016 | Fix check_vault_secret_id() to use live expiration_time | READY FOR QA |
