@@ -455,6 +455,94 @@ including Vault integration and multi-project coexistence.
 
 ---
 
+## EW-014 — Vault AppRole `secret_id` TTL check
+
+**Depends on:** EW-005
+
+**Description:**
+`check_vault_approle()` (EW-005) performs a real AppRole login and reports
+the resulting **token's** `lease_duration` — fixed by the role's
+`token_ttl=6d`. It never inspects the **`secret_id` credential's own TTL**.
+`scripts/vault_setup_test_role.sh` never sets `secret_id_ttl` on the role
+either, so the `secret_id` inherits Vault's unbounded default. Net effect:
+no advance warning that the `secret_id` itself is stale or long-lived,
+right up until it's revoked or breaks. This is a separately-scoped
+detection gap, not a bug in the existing check — `docs/SPEC.md` documents
+the existing check's scope as intentional.
+
+Uses `hvac`'s `auth.approle.read_secret_id(role_name, secret_id)`, a
+real Vault lookup against `auth/approle/role/<role_name>/secret-id/lookup`
+(a **POST**-based read-only endpoint — requires a token with `update`
+capability on that specific path, per Vault's ACL model). This is **not**
+the AppRole `role_id`/`secret_id` login flow and must use a separate,
+narrowly-scoped credential — never conflated with the login pair.
+
+**Acceptance criteria:**
+- [x] `checker/vault_checker.py` exports
+      `check_vault_secret_id(vault_url: str, role_name: str, secret_id: str, lookup_token: str, name: str = "vault-secret-id") -> dict`,
+      same result shape as the existing checks (`name`, `type`,
+      `days_remaining`, `severity`, `checked_at`, `error`)
+- [x] Uses a Vault token (`lookup_token`) with `update` capability scoped
+      to exactly `auth/approle/role/<role_name>/secret-id/lookup` — not
+      root/admin-equivalent, not reused from or conflated with the
+      `role_id`/`secret_id` login pair
+- [x] `days_remaining` computed from `secret_id_ttl` (seconds), same
+      `round(ttl_seconds / 86400, 2)` convention, fed through the existing
+      `compute_severity()` — no new threshold logic
+- [x] `secret_id_ttl` unset/0 → `severity: "healthy"`, `days_remaining: None`,
+      matching the existing `ttl == 0` pattern in `check_vault_token` /
+      `check_vault_approle`
+- [x] Wired into `check.py`'s `_run_vault_checks()`, gated independently
+      (skips cleanly if `role_name`/`secret_id`/`lookup_token` missing or
+      `REPLACE_ME`, consistent with the existing gates)
+- [x] `config/vault.yaml.example` documents the two new fields
+      (`role_name`, `lookup_token`), clearly distinguished from the
+      login pair
+- [x] `scripts/vault_setup_test_role.sh` extended (script-driven, not
+      manual out-of-band setup) to: mint a dedicated test `secret_id` with
+      a per-secret-id `ttl=5d` override (Vault's actual API parameter
+      name — `secret_id_ttl` is silently ignored as unrecognized; leaving
+      the role's
+      `token_ttl=6d` and any other already-issued `secret_id` untouched),
+      write a minimal named Vault policy scoped to exactly one role's
+      lookup path, and mint a `lookup_token` bound to that policy — all
+      printed to stdout for the user to copy into `config/vault.yaml`,
+      same convention as the existing credentials, never auto-written to
+      any file. Must not touch vault-secrets-demo's `demo-app` role.
+- [x] Both directions proven with real Vault output shown, not assumed:
+      a normal/long-lived `secret_id` reports `"healthy"`; the
+      deliberately short-TTL (`5d`) `secret_id` reports `"critical"`
+- [x] Blast-radius check: before/after Vault output (via
+      `secret-id-accessor/lookup` or equivalent) confirming `secret_id_ttl`
+      is not silently capped by any mount-level setting shared with
+      vault-secrets-demo's `demo-app` role — pasted into the QA report,
+      not assumed
+- [x] `tests/test_vault_checker.py`: offline mocked tests (healthy,
+      near-expiry/critical, warning-band, no-expiration, Vault error) +
+      one live test marked `@pytest.mark.vault` with the
+      `check_vault_health()` skip guard, matching the existing file's
+      pattern exactly
+- [x] No credentials in any test file, test output, log line, or script
+      output
+- [x] `docs/SPEC.md` updated with the new function's mechanics, contrasted
+      explicitly against `check_vault_approle` (login-token lease vs.
+      credential's own TTL; consumes a login vs. read-only lookup)
+- [x] `README.md` updated (Vault credential setup section) if the new
+      fields or check change what's exercised
+- [x] `dashboard/` untouched — zero files under `dashboard/` in
+      `git diff --stat`
+
+**Status: DONE**
+
+**Note:** see EW-016 — `check_vault_secret_id()`'s `days_remaining`
+calculation was corrected to use `expiration_time` instead of the static
+`secret_id_ttl` field. The classification proof above was and remains
+accurate for what it tested (point-in-time healthy/critical
+classification); the gap was an incomplete criteria list, not a false
+claim at the time.
+
+---
+
 ## EW-015 — Fix `days_remaining` precision truncation in `db.py`
 
 **Depends on:** EW-006, EW-014
@@ -576,94 +664,6 @@ documentation.
       `tests/test_vault_checker.py`, `docs/SPEC.md`, `docs/TICKETS.md`
 
 **Status: DONE**
-
----
-
-## EW-014 — Vault AppRole `secret_id` TTL check
-
-**Depends on:** EW-005
-
-**Description:**
-`check_vault_approle()` (EW-005) performs a real AppRole login and reports
-the resulting **token's** `lease_duration` — fixed by the role's
-`token_ttl=6d`. It never inspects the **`secret_id` credential's own TTL**.
-`scripts/vault_setup_test_role.sh` never sets `secret_id_ttl` on the role
-either, so the `secret_id` inherits Vault's unbounded default. Net effect:
-no advance warning that the `secret_id` itself is stale or long-lived,
-right up until it's revoked or breaks. This is a separately-scoped
-detection gap, not a bug in the existing check — `docs/SPEC.md` documents
-the existing check's scope as intentional.
-
-Uses `hvac`'s `auth.approle.read_secret_id(role_name, secret_id)`, a
-real Vault lookup against `auth/approle/role/<role_name>/secret-id/lookup`
-(a **POST**-based read-only endpoint — requires a token with `update`
-capability on that specific path, per Vault's ACL model). This is **not**
-the AppRole `role_id`/`secret_id` login flow and must use a separate,
-narrowly-scoped credential — never conflated with the login pair.
-
-**Acceptance criteria:**
-- [x] `checker/vault_checker.py` exports
-      `check_vault_secret_id(vault_url: str, role_name: str, secret_id: str, lookup_token: str, name: str = "vault-secret-id") -> dict`,
-      same result shape as the existing checks (`name`, `type`,
-      `days_remaining`, `severity`, `checked_at`, `error`)
-- [x] Uses a Vault token (`lookup_token`) with `update` capability scoped
-      to exactly `auth/approle/role/<role_name>/secret-id/lookup` — not
-      root/admin-equivalent, not reused from or conflated with the
-      `role_id`/`secret_id` login pair
-- [x] `days_remaining` computed from `secret_id_ttl` (seconds), same
-      `round(ttl_seconds / 86400, 2)` convention, fed through the existing
-      `compute_severity()` — no new threshold logic
-- [x] `secret_id_ttl` unset/0 → `severity: "healthy"`, `days_remaining: None`,
-      matching the existing `ttl == 0` pattern in `check_vault_token` /
-      `check_vault_approle`
-- [x] Wired into `check.py`'s `_run_vault_checks()`, gated independently
-      (skips cleanly if `role_name`/`secret_id`/`lookup_token` missing or
-      `REPLACE_ME`, consistent with the existing gates)
-- [x] `config/vault.yaml.example` documents the two new fields
-      (`role_name`, `lookup_token`), clearly distinguished from the
-      login pair
-- [x] `scripts/vault_setup_test_role.sh` extended (script-driven, not
-      manual out-of-band setup) to: mint a dedicated test `secret_id` with
-      a per-secret-id `ttl=5d` override (Vault's actual API parameter
-      name — `secret_id_ttl` is silently ignored as unrecognized; leaving
-      the role's
-      `token_ttl=6d` and any other already-issued `secret_id` untouched),
-      write a minimal named Vault policy scoped to exactly one role's
-      lookup path, and mint a `lookup_token` bound to that policy — all
-      printed to stdout for the user to copy into `config/vault.yaml`,
-      same convention as the existing credentials, never auto-written to
-      any file. Must not touch vault-secrets-demo's `demo-app` role.
-- [x] Both directions proven with real Vault output shown, not assumed:
-      a normal/long-lived `secret_id` reports `"healthy"`; the
-      deliberately short-TTL (`5d`) `secret_id` reports `"critical"`
-- [x] Blast-radius check: before/after Vault output (via
-      `secret-id-accessor/lookup` or equivalent) confirming `secret_id_ttl`
-      is not silently capped by any mount-level setting shared with
-      vault-secrets-demo's `demo-app` role — pasted into the QA report,
-      not assumed
-- [x] `tests/test_vault_checker.py`: offline mocked tests (healthy,
-      near-expiry/critical, warning-band, no-expiration, Vault error) +
-      one live test marked `@pytest.mark.vault` with the
-      `check_vault_health()` skip guard, matching the existing file's
-      pattern exactly
-- [x] No credentials in any test file, test output, log line, or script
-      output
-- [x] `docs/SPEC.md` updated with the new function's mechanics, contrasted
-      explicitly against `check_vault_approle` (login-token lease vs.
-      credential's own TTL; consumes a login vs. read-only lookup)
-- [x] `README.md` updated (Vault credential setup section) if the new
-      fields or check change what's exercised
-- [x] `dashboard/` untouched — zero files under `dashboard/` in
-      `git diff --stat`
-
-**Status: DONE**
-
-**Note:** see EW-016 — `check_vault_secret_id()`'s `days_remaining`
-calculation was corrected to use `expiration_time` instead of the static
-`secret_id_ttl` field. The classification proof above was and remains
-accurate for what it tested (point-in-time healthy/critical
-classification); the gap was an incomplete criteria list, not a false
-claim at the time.
 
 ---
 
