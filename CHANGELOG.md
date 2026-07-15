@@ -4,6 +4,32 @@ All entries correspond to accepted tickets. Dates reflect the commit date.
 
 ---
 
+## EW-016 — Fix `check_vault_secret_id()` to use live `expiration_time`
+**Accepted:** 2026-07-15 · commit `4d19f3c`
+
+`check_vault_secret_id()` (EW-014) computed `days_remaining` from Vault's
+`secret_id_ttl` field — a static configured duration that never changes
+as time passes. Confirmed live during EW-015's QA: it returned exactly
+`5.0` days both immediately after minting and 27 minutes later, while
+actual time-to-expiration had already dropped to `4.98`. This meant the
+check never showed warning→critical progression as a `secret_id` ages —
+a flat reading until the credential failed outright, defeating the
+purpose of EW-014. Fix computes `days_remaining` from
+`(expiration_time - now) / 86400` instead; `secret_id_ttl == 0` stays
+the unbounded/healthy gate, unchanged. New offline test proves the value
+is a live countdown by patching `datetime.now` to two values a day apart
+against a fixed `expiration_time`, asserting the difference — a live
+wall-clock sleep test can't prove this (movement at typical short TTLs
+is below 2-decimal rounding). Mutation-tested: reverted to the old
+calculation, confirmed the new test fails, restored, confirmed it passes
+again. `docs/TICKETS.md`'s EW-014 section left untouched except for an
+additive forward-reference note. Scope confined to
+`checker/vault_checker.py`, `tests/test_vault_checker.py`, `docs/SPEC.md`
+— `dashboard/` and the `lookup_token`/`role_name` credential design
+untouched.
+
+---
+
 ## EW-015 — Fix `days_remaining` precision truncation in `db.py`
 **Accepted:** 2026-07-15 · commit `f93acbb`
 
