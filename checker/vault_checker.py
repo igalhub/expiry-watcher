@@ -69,3 +69,33 @@ def check_vault_approle(vault_url: str, role_id: str, secret_id: str, name: str 
             "days_remaining": None, "severity": None,
             "checked_at": checked_at, "error": str(e),
         }
+
+
+def check_vault_secret_id(
+    vault_url: str, role_name: str, secret_id: str, lookup_token: str, name: str = "vault-secret-id"
+) -> dict:
+    checked_at = datetime.now(timezone.utc).isoformat()
+    try:
+        client = hvac.Client(url=vault_url, token=lookup_token)
+        data = client.auth.approle.read_secret_id(role_name, secret_id)["data"]
+        ttl_seconds = data.get("secret_id_ttl", 0)
+        # ttl == 0 means the secret_id never expires.
+        if ttl_seconds == 0:
+            return {
+                "name": name, "type": "vault-secret-id",
+                "days_remaining": None, "severity": "healthy",
+                "checked_at": checked_at, "error": None,
+            }
+        days_remaining = round(ttl_seconds / 86400, 2)
+        return {
+            "name": name, "type": "vault-secret-id",
+            "days_remaining": days_remaining,
+            "severity": compute_severity(int(days_remaining)),
+            "checked_at": checked_at, "error": None,
+        }
+    except Exception as e:
+        return {
+            "name": name, "type": "vault-secret-id",
+            "days_remaining": None, "severity": None,
+            "checked_at": checked_at, "error": str(e),
+        }

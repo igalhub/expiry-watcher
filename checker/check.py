@@ -16,7 +16,12 @@ import yaml
 from checker.db import init_db, write_results
 from checker.local_cert_checker import check_cert_file
 from checker.tls_checker import check_tls
-from checker.vault_checker import check_vault_approle, check_vault_health, check_vault_token
+from checker.vault_checker import (
+    check_vault_approle,
+    check_vault_health,
+    check_vault_secret_id,
+    check_vault_token,
+)
 
 _DEFAULT_CONFIG = "config/targets.yaml"
 _DEFAULT_DB = os.environ.get("EXPIRY_WATCHER_DB", "results.db")
@@ -87,6 +92,13 @@ def _run_vault_checks(vault_url: str, creds: dict) -> list[dict]:
     if role_id and secret_id and "REPLACE_ME" not in (role_id, secret_id):
         results.append(
             check_vault_approle(vault_url, role_id, secret_id, name="vault-approle")
+        )
+
+    role_name = creds.get("role_name", "")
+    lookup_token = creds.get("lookup_token", "")
+    if role_name and secret_id and lookup_token and "REPLACE_ME" not in (role_name, secret_id, lookup_token):
+        results.append(
+            check_vault_secret_id(vault_url, role_name, secret_id, lookup_token, name="vault-secret-id")
         )
 
     return results

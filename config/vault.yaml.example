@@ -8,3 +8,9 @@ vault:
   secret_id: "REPLACE_ME"
   # Optional: a long-lived token to check directly (in addition to AppRole).
   token: "REPLACE_ME"
+  # NEW (EW-014): needed for check_vault_secret_id — the AppRole's own name
+  # (not the role_id UUID above), plus a narrowly-scoped token authorized to
+  # read auth/approle/role/<role_name>/secret-id/lookup. This is NOT the
+  # role_id/secret_id login pair — never conflate the two.
+  role_name: "REPLACE_ME"
+  lookup_token: "REPLACE_ME"
