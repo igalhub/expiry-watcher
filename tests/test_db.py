@@ -33,6 +33,32 @@ def test_write_and_read_single_result(db):
     assert rows[0]["error"] is None
 
 
+def test_write_and_read_fractional_days_remaining(db):
+    # EW-015: a Vault-style fractional TTL must survive the round trip
+    # exactly, not get truncated to int() on write.
+    results = [{
+        "name": "vault", "type": "vault-approle",
+        "days_remaining": 6.23, "severity": "warning",
+        "checked_at": "2026-06-22T00:00:00+00:00", "error": None,
+    }]
+    write_results(db, results)
+    rows = read_results(db)
+    assert rows[0]["days_remaining"] == 6.23
+
+
+def test_write_and_read_whole_day_int_style(db):
+    # TLS/local-cert checkers produce a plain Python int via `.days`.
+    results = [{
+        "name": "example.com", "type": "tls",
+        "days_remaining": 45, "severity": "healthy",
+        "checked_at": "2026-06-22T00:00:00+00:00", "error": None,
+    }]
+    write_results(db, results)
+    rows = read_results(db)
+    assert rows[0]["days_remaining"] == 45
+    assert isinstance(rows[0]["days_remaining"], int)
+
+
 def test_write_upserts_on_name_type(db):
     row = {
         "name": "example.com", "type": "tls",

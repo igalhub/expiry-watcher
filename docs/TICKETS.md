@@ -455,6 +455,65 @@ including Vault integration and multi-project coexistence.
 
 ---
 
+## EW-015 — Fix `days_remaining` precision truncation in `db.py`
+
+**Depends on:** EW-006, EW-014
+
+**Description:**
+`checker/vault_checker.py` (EW-005, extended by EW-014) computes Vault TTLs
+as floats rounded to 2 decimal places, and `docs/SPEC.md` explicitly says
+this precision matters ("fractional days are meaningful at Vault's typical
+hour-to-day TTL scale, unlike cert expiry which is whole days"). But
+`checker/db.py`'s `write_results()` forces `days_remaining` through `int()`
+before binding it for the SQLite `INSERT`, silently truncating it — a
+credential with `6.23` days remaining is stored and displayed as `6`.
+Severity classification is unaffected (already computed on an
+internally-`int()`-truncated value by each checker before it returns);
+this is purely a stored/displayed-precision bug, not a detection bug.
+
+**Verified fix approach (confirmed empirically, not just theorized):**
+the schema does **not** need to change. SQLite's `INTEGER` column affinity
+only converts a `REAL` value to `INTEGER` when that conversion is
+lossless — a value like `6.23` that can't be represented exactly as an
+integer is stored as `REAL` as-is (independently re-verified in-memory
+against this project's exact schema before implementation started). The
+entire bug is the explicit `int(...)` cast in Python; removing it and
+binding the raw value directly is sufficient.
+
+**Acceptance criteria:**
+- [ ] `checker/db.py`'s `write_results()` no longer forces `days_remaining`
+      through `int()` — binds the value as returned by each checker (int
+      for TLS/local-cert, which are naturally whole-day ints from
+      `.days`; float for Vault checks, which are already `round(x, 2)`)
+- [ ] Schema (`CREATE TABLE results ... days_remaining INTEGER ...`) stays
+      as-is — no `ALTER TABLE` / migration
+- [ ] `checker/db.py`'s `read_results()` requires no change
+- [ ] A round-trip test in `tests/test_db.py` writes a result with a
+      fractional `days_remaining` (e.g. `6.23`, matching realistic Vault
+      output) via `write_results()`, reads it back via `read_results()`,
+      and asserts the exact float is preserved — not truncated. Shown
+      with real `pytest -v` output, not just asserted
+- [ ] A regression test confirms existing whole-day values (TLS/local-cert
+      style, plain Python `int`, e.g. `45`) still round-trip correctly,
+      so this fix doesn't change behavior for the existing majority of
+      checks
+- [ ] `docs/SPEC.md`'s `checker/db.py` section gets a one-line addition
+      noting `days_remaining` preserves the precision each checker
+      produces (int or float), rather than being silently normalized to
+      int
+- [ ] No change to `checker/vault_checker.py`, `checker/tls_checker.py`,
+      `checker/local_cert_checker.py`, or `checker/check.py`
+- [ ] `dashboard/` untouched — zero files under `dashboard/` in
+      `git diff --stat`; no new test cases in `tests/test_dashboard.py`
+- [ ] `pytest -m "not network and not vault" -v` passes in full, new
+      tests shown explicitly in the output
+- [ ] No credentials or secrets anywhere (trivially true for this ticket,
+      but scanned anyway per this repo's standard convention)
+
+**Status: READY FOR QA**
+
+---
+
 ## EW-014 — Vault AppRole `secret_id` TTL check
 
 **Depends on:** EW-005
@@ -554,3 +613,4 @@ narrowly-scoped credential — never conflated with the login pair.
 | EW-012 | AWS IAM (stretch) | DEFERRED |
 | EW-013 | Home lab deployment documentation | DONE |
 | EW-014 | Vault AppRole secret_id TTL check | DONE |
+| EW-015 | Fix days_remaining precision truncation in db.py | READY FOR QA |
