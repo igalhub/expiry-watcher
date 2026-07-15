@@ -4,6 +4,27 @@ All entries correspond to accepted tickets. Dates reflect the commit date.
 
 ---
 
+## EW-015 — Fix `days_remaining` precision truncation in `db.py`
+**Accepted:** 2026-07-15 · commit `f93acbb`
+
+`checker/db.py`'s `write_results()` forced `days_remaining` through `int()`
+before binding it for the SQLite `INSERT`, silently discarding the
+2-decimal precision `checker/vault_checker.py` (EW-005/EW-014) deliberately
+produces and `docs/SPEC.md` says matters at Vault's hour-to-day TTL scale —
+a credential with `6.23` days remaining was stored and displayed as `6`.
+No schema change needed: SQLite's `INTEGER` column affinity only converts
+a `REAL` to `INTEGER` when the conversion is lossless, so removing the
+`int()` cast and binding the raw value is sufficient — verified in-memory
+against the exact live schema before implementing, and end-to-end against
+the real config afterward. Severity classification is unaffected (already
+computed on an internally-`int()`-truncated value by each checker before
+returning). New tests in `tests/test_db.py` cover both the fractional
+round-trip (`6.23`) and a whole-day `int` regression guard. Scope confined
+to `checker/db.py`, `tests/test_db.py`, `docs/SPEC.md` — `dashboard/` and
+all other checker modules untouched.
+
+---
+
 ## EW-014 — Vault AppRole `secret_id` TTL check
 **Accepted:** 2026-07-15 · commit `58e269c`
 
