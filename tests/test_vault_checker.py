@@ -4,7 +4,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
-from checker.vault_checker import check_vault_approle, check_vault_health, check_vault_token
+from checker.vault_checker import (
+    check_vault_approle,
+    check_vault_health,
+    check_vault_secret_id,
+    check_vault_token,
+)
 
 VAULT_URL = "http://localhost:8200"
 
@@ -130,6 +135,48 @@ def test_approle_vault_error():
     assert result["severity"] is None
 
 
+# --- offline: check_vault_secret_id ---
+
+def test_secret_id_healthy_unbounded():
+    mock_client = MagicMock()
+    mock_client.auth.approle.read_secret_id.return_value = {"data": {"secret_id_ttl": 0}}
+    with patch("hvac.Client", return_value=mock_client):
+        result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+    assert result["error"] is None
+    assert result["days_remaining"] is None
+    assert result["severity"] == "healthy"
+
+
+def test_secret_id_critical_ttl():
+    mock_client = MagicMock()
+    mock_client.auth.approle.read_secret_id.return_value = {"data": {"secret_id_ttl": 5 * 86400}}
+    with patch("hvac.Client", return_value=mock_client):
+        result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+    assert result["error"] is None
+    assert result["days_remaining"] == 5.0
+    assert result["severity"] == "critical"
+
+
+def test_secret_id_warning_ttl():
+    mock_client = MagicMock()
+    mock_client.auth.approle.read_secret_id.return_value = {"data": {"secret_id_ttl": 20 * 86400}}
+    with patch("hvac.Client", return_value=mock_client):
+        result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+    assert result["error"] is None
+    assert result["days_remaining"] == 20.0
+    assert result["severity"] == "warning"
+
+
+def test_secret_id_vault_error():
+    mock_client = MagicMock()
+    mock_client.auth.approle.read_secret_id.side_effect = Exception("permission denied")
+    with patch("hvac.Client", return_value=mock_client):
+        result = check_vault_secret_id(VAULT_URL, "fake-role", "fake-secret-id", "fake-lookup-token")
+    assert result["error"] is not None
+    assert result["days_remaining"] is None
+    assert result["severity"] is None
+
+
 # --- live vault tests ---
 
 @pytest.mark.vault
@@ -162,6 +209,24 @@ def test_live_approle_short_ttl():
         pytest.skip("AppRole credentials not configured in config/vault.yaml")
     result = check_vault_approle(
         VAULT_URL, role_id, secret_id, name="expiry-watcher-test-short-ttl"
+    )
+    assert result["error"] is None, f"Unexpected error: {result['error']}"
+    assert result["days_remaining"] is not None
+    assert result["days_remaining"] <= 7, f"Expected critical TTL, got {result['days_remaining']} days"
+    assert result["severity"] == "critical"
+
+
+@pytest.mark.vault
+def test_live_secret_id_short_ttl():
+    _require_healthy_vault()
+    cfg = _vault_config()
+    role_name = cfg.get("role_name", "")
+    secret_id = cfg.get("secret_id", "")
+    lookup_token = cfg.get("lookup_token", "")
+    if not role_name or not secret_id or not lookup_token or "REPLACE_ME" in (role_name, secret_id, lookup_token):
+        pytest.skip("secret_id-lookup credentials not configured in config/vault.yaml")
+    result = check_vault_secret_id(
+        VAULT_URL, role_name, secret_id, lookup_token, name="expiry-watcher-test-short-ttl-secret-id"
     )
     assert result["error"] is None, f"Unexpected error: {result['error']}"
     assert result["days_remaining"] is not None

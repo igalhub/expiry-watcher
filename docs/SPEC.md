@@ -71,12 +71,12 @@ Same catch-all exception handling, same return shape.
 
 ## `checker/vault_checker.py`
 
-Three independent functions, all returning the same result shape
+Four independent functions, all returning the same result shape
 (`name`, `type`, `days_remaining`, `severity`, `checked_at`, `error`):
 
 - **`check_vault_health(vault_url)`** — `GET /v1/sys/health`. A `503`
   response means Vault is sealed (Vault's own health-check convention);
-  a connection failure means unreachable. This gates the other two
+  a connection failure means unreachable. This gates the other three
   checks — see `check.py`'s `_run_vault_checks`.
 - **`check_vault_token(vault_url, token, name)`** — `client.auth.token.lookup_self()`,
   reads `ttl` (seconds) from the response. `ttl == 0` means the token
@@ -88,6 +88,29 @@ Three independent functions, all returning the same result shape
   call, not a read-only inspection — every check run consumes one
   AppRole login. Same `ttl == 0` → healthy/`None` handling as the token
   check.
+- **`check_vault_secret_id(vault_url, role_name, secret_id, lookup_token, name)`**
+  (EW-014) — reports the **`secret_id` credential's own remaining TTL**,
+  not the login token's lease that `check_vault_approle` already covers.
+  Calls `client.auth.approle.read_secret_id(role_name, secret_id)`, a
+  **read-only** lookup against Vault's `auth/approle/role/<role_name>/secret-id/lookup`
+  endpoint — this is a POST under the hood, so it requires a Vault token
+  with `update` (not `read`) ACL capability on that specific path. That
+  token (`lookup_token`) is a distinct credential from the AppRole
+  `role_id`/`secret_id` login pair — it authenticates as a bearer token
+  scoped by a narrow named policy, never derived from or interchangeable
+  with the login flow. Unlike `check_vault_approle`, this call does not
+  consume or rotate the `secret_id` — it's a pure read. Reads
+  `secret_id_ttl` (seconds) from the response; same `ttl == 0` →
+  healthy/`None` handling as the other two TTL checks. Requires `role_name`
+  (the AppRole's name, distinct from the `role_id` UUID used for login).
+
+**Confirmed constraint (live-verified, EW-014):** on this project's shared
+Vault dev instance, the `approle` auth mount's `max_lease_ttl` (2160h/90d)
+caps `secret_id` `ttl` requests the same way it caps login-token leases —
+requesting `ttl=120d` when minting a `secret_id` returns exactly `90d`,
+silently capped, not rejected. See `docs/HOMELAB_DEPLOYMENT.md` for the
+full finding; keep any `secret_id` `ttl` used for testing well under 90d
+on this shared instance.
 
 Days-remaining values for Vault are `ttl_seconds / 86400` rounded to 2
 decimal places (fractional days are meaningful at Vault's typical

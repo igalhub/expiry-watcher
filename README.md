@@ -72,11 +72,19 @@ export VAULT_TOKEN=<root-token>
 bash scripts/vault_setup_test_role.sh
 ```
 
-The script prints a `role_id` and `secret_id` to stdout. Copy them into `config/vault.yaml` (gitignored, never committed):
+The script prints a `role_id` and `secret_id` to stdout, then — for the
+`secret_id`-TTL check (EW-014) — a second, clearly separated block with
+`role_name`, a fresh short-TTL `secret_id`, and a `lookup_token`. The
+`lookup_token` is a distinct credential from the `role_id`/`secret_id`
+login pair: it's a narrowly-scoped Vault token (policy grants only
+`update` on that role's `secret-id/lookup` path), used to read the
+`secret_id`'s own remaining TTL without performing a login. Copy both
+blocks into `config/vault.yaml` (gitignored, never committed):
 
 ```bash
 cp config/vault.yaml.example config/vault.yaml
-# then edit config/vault.yaml and fill in role_id and secret_id
+# then edit config/vault.yaml and fill in role_id, secret_id, role_name,
+# lookup_token (token is optional — see config/vault.yaml.example)
 ```
 
 ### Install the systemd timer (Linux only)
